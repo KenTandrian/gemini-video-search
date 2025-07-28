@@ -47,6 +47,7 @@ This script downloads a specified number of videos from a YouTube playlist and u
     - `YOUTUBE_PLAYLIST_ID`: The ID of the YouTube playlist you want to download from.
     - `NUM_VIDEOS`: The number of videos to download from the beginning of the playlist.
     - `GCS_BUCKET_NAME`: The name of your Google Cloud Storage bucket.
+    - `GCS_FILENAME_PREFIX`: (Optional) A prefix to add to the filename of each video uploaded to GCS.
     - `DOWNLOAD_DIR`: The local directory where videos will be temporarily stored.
 
 ## Usage
@@ -62,6 +63,6 @@ The script will:
 2.  Create the download directory if it doesn't exist.
 3.  For each of the first `NUM_VIDEOS` in the playlist:
     a. Download the video to the local `downloads` directory.
-    b. Upload the video to your GCS bucket with the filename prefixed with "Emtek - ".
+    b. Upload the video to your GCS bucket, adding the specified prefix to the filename.
     c. Delete the video from the local `downloads` directory.
 4.  Once all videos are processed, it will remove the now-empty `downloads` directory.

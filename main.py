@@ -12,6 +12,7 @@ GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
 DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "downloads")
 YOUTUBE_PLAYLIST_ID = os.getenv("YOUTUBE_PLAYLIST_ID")
 NUM_VIDEOS = int(os.getenv("NUM_VIDEOS", 5))
+GCS_FILENAME_PREFIX = os.getenv("GCS_FILENAME_PREFIX", "")
 
 
 def upload_and_cleanup(filepath, bucket_name):
@@ -22,7 +23,7 @@ def upload_and_cleanup(filepath, bucket_name):
         print(f"File not found: {filepath}, skipping.")
         return
 
-    new_filename = f"Emtek - {os.path.basename(filepath)}"
+    new_filename = f"{GCS_FILENAME_PREFIX}{os.path.basename(filepath)}"
     print(f"\nUploading {os.path.basename(filepath)} as {new_filename} to GCS bucket {bucket_name}...")
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
