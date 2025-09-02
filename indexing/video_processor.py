@@ -12,19 +12,20 @@ def process_video_from_gcs(
     gcs_video_path: str,
     segment_duration: int,
     processed_segments_gcs_path: str,
-) -> list[str]:
+) -> list[tuple[str, float]]:
     """
     Downloads a video from GCS, splits it into segments, and uploads them back.
 
     Returns:
-        A list of GCS URIs for the newly created video segments.
+        A list of tuples, where each tuple contains the GCS URI and the
+        duration of the newly created video segments.
     """
     storage_client = storage.Client()
     bucket = storage_client.bucket(gcs_bucket_name)
     source_blob = bucket.blob(gcs_video_path)
     video_filename = os.path.basename(gcs_video_path)
 
-    segment_gcs_uris = []
+    processed_segments = []
 
     with tempfile.TemporaryDirectory() as temp_dir:
         local_video_path = os.path.join(temp_dir, video_filename)
@@ -52,13 +53,23 @@ def process_video_from_gcs(
         for filename in sorted(os.listdir(temp_dir)):
             if filename.endswith(".mp4") and filename != video_filename:
                 local_segment_path = os.path.join(temp_dir, filename)
+                
+                # Get the duration of the segment
+                try:
+                    probe = ffmpeg.probe(local_segment_path)
+                    duration = float(probe['format']['duration'])
+                except ffmpeg.Error as e:
+                    logger.error(f"Failed to get duration for {local_segment_path}: {e.stderr.decode('utf8')}")
+                    duration = segment_duration # Fallback to the default segment duration
+
                 segment_blob_name = f"{processed_segments_gcs_path}/{filename}"
                 
                 logger.info(f"Uploading segment {local_segment_path} to gs://{gcs_bucket_name}/{segment_blob_name}...")
                 blob = bucket.blob(segment_blob_name)
                 blob.upload_from_filename(local_segment_path)
                 
-                segment_gcs_uris.append(f"gs://{gcs_bucket_name}/{segment_blob_name}")
+                gcs_uri = f"gs://{gcs_bucket_name}/{segment_blob_name}"
+                processed_segments.append((gcs_uri, duration))
     
-    logger.info(f"Successfully processed video into {len(segment_gcs_uris)} segments.")
-    return segment_gcs_uris
+    logger.info(f"Successfully processed video into {len(processed_segments)} segments.")
+    return processed_segments

@@ -1,6 +1,7 @@
 import logging
+import json
 from google import genai
-from google.genai.types import Part
+from google.genai.types import Part, GenerateContentConfig
 
 # Internal modules
 import config
@@ -13,24 +14,25 @@ try:
     logger.info("Vertex AI initialized successfully.")
 except Exception as e:
     logger.error(f"Error initializing Vertex AI: {e}")
-    
-def generate_video_description(gcs_uri: str) -> str:
+
+def generate_video_analysis(gcs_uri: str) -> dict:
     """
-    Analyzes a video segment using Gemini and generates a text description.
+    Analyzes a video segment using Gemini and generates a structured JSON object.
 
     Returns:
-        A detailed English description of the video content, or an empty string if analysis fails.
+        A dictionary containing the description, persons, organizations, and hashtags,
+        or an empty dictionary if analysis fails.
     """
     logger.info(f"Analyzing video: {gcs_uri} with model {config.GEMINI_MODEL_NAME}...")
-    
+
     prompt = """
-    Analyze this sports video clip with high detail.
-    Provide a concise, single-paragraph description in English focusing on the key actions.
-    Describe:
-    - The main player or players involved (e.g., "AC Milan striker", "the goalkeeper").
-    - The specific action taking place (e.g., "a powerful right-footed shot", "a diving save").
-    - The immediate outcome of the action within this clip (e.g., "scoring a goal", "conceding a corner").
-    - Avoid mentioning camera angles or generic statements like "the video shows".
+    Analyze this sports video clip with high detail. Respond in a structured JSON format.
+    The JSON object should contain the following fields:
+    - "description": A complete, single-paragraph description in English focusing on the key actions.
+    - "persons": A list of JSON objects, each with a "name" (e.g., "Lionel Messi", "the goalkeeper") and a "role". The role must be one of the following supported values: "director", "actor", "player", "team", "league", "editor", "author", "character", "contributor", "creator", "editor", "funder", "producer", "provider", "publisher", "sponsor", "translator", "music-by", "channel". For athletes, use the "player" role.
+    - "organizations": A list of JSON objects, each with a "name" (e.g., "FC Barcelona", "AC Milan") and a "role". The role must be one of the following supported values: "director", "actor", "player", "team", "league", "editor", "author", "character", "contributor", "creator", "editor", "funder", "producer", "provider", "publisher", "sponsor", "translator", "music-by", "channel". For sports teams, use the "team" role.
+    - "hash_tags": A list of relevant hashtags (e.g., "#goal", "#soccer").
+
     Focus only on the events in the video.
     """
 
@@ -38,13 +40,19 @@ def generate_video_description(gcs_uri: str) -> str:
         video_part = Part.from_uri(file_uri=gcs_uri, mime_type="video/mp4")
         response = client.models.generate_content(
             model=config.GEMINI_MODEL_NAME,
-            contents=[prompt, video_part]
+            contents=[prompt, video_part],
+            config=GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
-        
-        description = response.text.strip() if response.text else ""
-        logger.info(f"Generated description for {gcs_uri}: '{description}'")
-        return description
 
-    except Exception as e:
-        logger.error(f"Failed to generate description for {gcs_uri}. Error: {e}")
-        return ""
+        # Clean the response and load as JSON
+        cleaned_response = response.text.strip().replace("```json", "").replace("```", "") if response.text else ""
+        analysis_data = json.loads(cleaned_response)
+        
+        logger.info(f"Generated analysis for {gcs_uri}: {analysis_data}")
+        return analysis_data
+
+    except (Exception, json.JSONDecodeError) as e:
+        logger.error(f"Failed to generate or parse analysis for {gcs_uri}. Error: {e}")
+        return {}

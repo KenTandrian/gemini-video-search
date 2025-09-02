@@ -38,23 +38,29 @@ def run_pipeline(gcs_video_uri: str):
     print(f"[Step 2/3] Analyzing {len(segment_gcs_uris)} segments with Gemini...")
     video_documents = []
     video_basename = os.path.basename(video_blob_path)
+    total_duration_processed = 0
 
-    for i, seg_uri in enumerate(tqdm(segment_gcs_uris, desc="Analyzing segments")):
-        description = gemini_analyzer.generate_video_description(seg_uri)
-        if description:
-            start_time = i * 15
+    for i, (seg_uri, duration) in enumerate(tqdm(segment_gcs_uris, desc="Analyzing segments")):
+        analysis_data = gemini_analyzer.generate_video_analysis(seg_uri)
+        if analysis_data and analysis_data.get("description"):
+            start_time = total_duration_processed
+            total_duration_processed += duration
 
             schema_compliant_data = {
                 # --- Required fields ---
-                "title": f"Segment from {video_basename} at {start_time}s",
+                "title": analysis_data.get("description"),
                 "categories": ["Sports", "Soccer", "Video Highlight"],
                 "uri": seg_uri,
                 "available_time": datetime.now(timezone.utc).isoformat(),
 
                 # --- Optional but important fields ---
-                "description": description,
-                "duration": "15s", # ISO 8601 duration format for 15 seconds
-                "in_languages": ["en"], # Assuming English descriptions
+                "description": f"Segment from {video_basename} at {start_time}s",
+                "duration": f"{duration}s",
+                "in_languages": ["en"],
+                "media_type": "sports-game",
+                "persons": analysis_data.get("persons", []),
+                "organizations": analysis_data.get("organizations", []),
+                "hash_tags": analysis_data.get("hash_tags", []),
             }
 
             simple_json_data = {
