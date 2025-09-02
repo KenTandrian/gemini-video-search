@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}{{ query }} - Gemini Media Search{% endblock %}
+
+{% block content %}
+<!-- Modern Search Results Header -->
+<div class="results-header">
+    <div class="search-form-container">
+        <form action="{{ url_for('search') }}" method="GET" class="search-form">
+            <div class="search-input-group">
+                <input type="text" 
+                       name="q" 
+                       value="{{ query }}" 
+                       class="search-input" 
+                       placeholder="Search videos..."
+                       required>
+                <button class="search-button" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="results-info">
+        {% if total_results > 0 %}
+            <p>About {{ total_results }} result{{ 's' if total_results != 1 else '' }} (0.45 seconds)</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if error %}
+<!-- Error Message -->
+<div class="search-results-container">
+    <div class="error-card">
+        <i class="fas fa-exclamation-circle"></i>
+        <h3>Something went wrong</h3>
+        <p>{{ error }}</p>
+        <a href="{{ url_for('index') }}" class="btn-home">
+            <i class="fas fa-home"></i>Back to Search
+        </a>
+    </div>
+</div>
+{% else %}
+
+<!-- Main Results Layout -->
+<div class="results-main">
+    <!-- Search Results -->
+    <div class="results-column">
+        {% if results %}
+        <div class="results-list">
+            {% for result in results %}
+            <div class="result-item">
+                <div class="result-content">
+                    <div class="result-text">
+                        {% if result.uri %}
+                        <div class="result-url">{{ result.uri | replace('gs://', '') | replace('https://storage.cloud.google.com/', '') | replace('https://', '') | replace('http://', '') }}</div>
+                        {% endif %}
+                        
+                        <h3 class="result-title">
+                            {% if result.uri %}
+                            <a href="{{ result.uri }}" target="_blank">{{ result.title }}</a>
+                            {% else %}
+                            {{ result.title }}
+                            {% endif %}
+                        </h3>
+                        
+                        {% if result.snippet %}
+                        <p class="result-snippet">{{ result.snippet[:200] }}{% if result.snippet|length > 200 %}...{% endif %}</p>
+                        {% endif %}
+                        
+                        {% if result.uri %}
+                        <div class="result-actions">
+                            <a href="{{ result.uri }}" target="_blank" class="result-link">
+                                <i class="fas fa-play"></i>
+                                Watch Video
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if result.thumbnail or result.uri %}
+                    <div class="result-media">
+                        <div class="result-thumbnail" data-video-url="{{ result.uri if result.uri else '' }}">
+                            {% if result.thumbnail %}
+                            <img src="{{ result.thumbnail }}" 
+                                 alt="{{ result.title }}" 
+                                 loading="lazy"
+                                 class="thumbnail-image"
+                                 onerror="this.style.display='none'; this.parentElement.querySelector('.thumbnail-placeholder').style.display='flex';">
+                            {% endif %}
+                            
+                            <div class="thumbnail-placeholder {% if not result.thumbnail %}show{% endif %}">
+                                <i class="fas fa-video"></i>
+                                <span>Video Preview</span>
+                            </div>
+                            
+                            <div class="play-overlay">
+                                <i class="fas fa-play"></i> Video
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No Results -->
+        <div class="no-results">
+            <i class="fas fa-search"></i>
+            <h3>No results found</h3>
+            <p>Your search - <strong>{{ query }}</strong> - did not match any videos.</p>
+            <div style="margin: 20px 0; text-align: left;">
+                <p><strong>Suggestions:</strong></p>
+                <ul style="margin: 8px 0; padding-left: 20px; color: var(--google-grey-600);">
+                    <li>Make sure all words are spelled correctly.</li>
+                    <li>Try different keywords.</li>
+                    <li>Try more general keywords.</li>
+                    <li>Try fewer keywords.</li>
+                </ul>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn-home">
+                <i class="fas fa-home"></i>
+                New Search
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Modern result interactions
+document.addEventListener('DOMContentLoaded', function() {
+    const resultItems = document.querySelectorAll('.result-item');
+    
+    resultItems.forEach(item => {
+        // Add click handler for the entire result
+        item.addEventListener('click', function(e) {
+            // Don't trigger if clicking on a link or button
+            if (e.target.closest('a') || e.target.closest('button')) return;
+            
+            const link = this.querySelector('.result-title a');
+            if (link) {
+                window.open(link.href, '_blank');
+            }
+        });
+    });
+    
+    // Search form enhancements
+    const searchForm = document.querySelector('.search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            const button = this.querySelector('.search-button');
+            
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+        });
+    }
+    
+    // Enhanced input focus
+    const searchInput = document.querySelector('.search-input');
+    if (searchInput) {
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.style.boxShadow = '0 4px 16px 0 rgba(74, 144, 226, 0.2)';
+            this.parentElement.style.borderColor = 'var(--soft-blue)';
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.style.boxShadow = '0 2px 8px 0 rgba(74, 144, 226, 0.1)';
+            this.parentElement.style.borderColor = 'var(--google-grey-300)';
+        });
+    }
+});
+</script>
+{% endblock %} 

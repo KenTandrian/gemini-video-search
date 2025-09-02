@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Gemini Media Search{% endblock %}
+
+{% block content %}
+<!-- Google Style Search Page -->
+<div class="search-page">
+    <div class="search-container">
+        <div class="brand-title">
+            <h1><i class="fas fa-video" style="margin-right: 16px;"></i>Vertex AI</h1>
+            <p>AI-Powered Video Discovery</p>
+        </div>
+        
+        <div class="search-form-container">
+            <form action="{{ url_for('search') }}" method="GET" class="search-form">
+                <div class="search-input-group">
+                    <input type="text" 
+                           name="q" 
+                           class="search-input" 
+                           placeholder="Search videos, shows, sports..."
+                           required
+                           autocomplete="off"
+                           autofocus>
+                    <button class="search-button" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+            
+            {% if error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="google-search-buttons">
+            <a href="{{ url_for('search', q='volleyball') }}" class="google-btn">Volleyball</a>
+            <a href="{{ url_for('search', q='drama') }}" class="google-btn">Drama</a>
+            <a href="{{ url_for('search', q='sports') }}" class="google-btn">Sports</a>
+            <a href="{{ url_for('search', q='magic') }}" class="google-btn">Magic 5</a>
+        </div>
+        
+        <div class="search-tips">
+            <p>Discover videos with intelligent AI search powered by Vertex AI</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Google-style search experience
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('.search-input');
+    const searchForm = document.querySelector('.search-form');
+    
+    // Auto-focus search input
+    if (searchInput) {
+        searchInput.focus();
+        
+        // Google-style input focus effect
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.style.boxShadow = '0 4px 16px 0 rgba(74, 144, 226, 0.2)';
+            this.parentElement.style.borderColor = 'var(--soft-blue)';
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.style.boxShadow = '0 2px 8px 0 rgba(74, 144, 226, 0.1)';
+            this.parentElement.style.borderColor = 'var(--google-grey-300)';
+        });
+    }
+    
+    // Enhanced form submission
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            const input = this.querySelector('input[name="q"]');
+            const button = this.querySelector('.search-button');
+            
+            if (input.value.trim()) {
+                // Add loading state
+                this.classList.add('searching');
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+            }
+        });
+    }
+});
+
+// Google-style keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    const searchInput = document.querySelector('.search-input');
+    
+    // Escape to clear/blur
+    if (e.key === 'Escape') {
+        if (searchInput.value) {
+            searchInput.value = '';
+        } else {
+            searchInput.blur();
+        }
+    }
+    
+    // Ctrl/Cmd + K to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+    }
+});
+</script>
+{% endblock %} 

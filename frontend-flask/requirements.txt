@@ -1,0 +1,25 @@
+# Flask web framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Google Cloud dependencies
+google-cloud-discoveryengine==0.11.11
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-core==2.15.0
+google-cloud-core==2.4.1
+
+# Production WSGI server
+gunicorn==21.2.0
+
+# HTTP requests (if needed for future features)
+requests==2.31.0
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# JSON handling
+jsonify==0.5
+
+protobuf==4.25.1 
