@@ -1,0 +1,14 @@
+# Google Cloud Libraries
+google-cloud-aiplatform==1.111.0
+google-cloud-discoveryengine==0.13.11
+google-cloud-storage
+google-genai==1.32.0
+
+# Video processing
+ffmpeg-python==0.2.0
+
+# For environment variables
+python-dotenv==1.1.1
+
+# General utilities
+tqdm==4.67.1
