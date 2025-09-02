@@ -35,20 +35,23 @@ def run_pipeline(gcs_video_uri: str):
     )
 
     # 2. Analyze segments and prepare the final JSON data
-    print(f"[Step 2/3] Analyzing {len(segment_gcs_uris)} segments with Gemini...")
+    print(f"[Step 2/4] Generating global context for the video...")
+    global_context = gemini_analyzer.generate_global_context(gcs_video_uri)
+
+    print(f"[Step 3/4] Analyzing {len(segment_gcs_uris)} segments with Gemini...")
     video_documents = []
     video_basename = os.path.basename(video_blob_path)
     total_duration_processed = 0
 
     for i, (seg_uri, duration) in enumerate(tqdm(segment_gcs_uris, desc="Analyzing segments")):
-        analysis_data = gemini_analyzer.generate_video_analysis(seg_uri)
+        analysis_data = gemini_analyzer.generate_video_analysis(seg_uri, global_context)
         if analysis_data and analysis_data.get("description"):
             start_time = total_duration_processed
             total_duration_processed += duration
 
             schema_compliant_data = {
                 # --- Required fields ---
-                "title": analysis_data.get("description"),
+                "title": f'{analysis_data.get("description")} {" ".join(analysis_data.get("hash_tags", []))}',
                 "categories": ["Sports", "Soccer", "Video Highlight"],
                 "uri": seg_uri,
                 "available_time": datetime.now(timezone.utc).isoformat(),
@@ -70,7 +73,7 @@ def run_pipeline(gcs_video_uri: str):
             video_documents.append(simple_json_data)
 
     # 3. Upload the JSONL file and trigger the import job
-    print(f"[Step 3/3] Uploading {len(video_documents)} documents and triggering import...")
+    print(f"[Step 4/4] Uploading {len(video_documents)} documents and triggering import...")
     if not video_documents:
         print("No documents were generated for this video. Skipping import.")
         return
