@@ -1,12 +1,13 @@
 "use server";
 
+import { assertEnv } from "@/lib/utils";
 import type { Facet, Segment } from "@/types/search";
 import { SearchServiceClient } from "@google-cloud/discoveryengine";
 
 // Get configuration from environment variables
-const projectId = process.env.GOOGLE_CLOUD_PROJECT!;
-const location = process.env.VERTEX_AI_LOCATION!;
-const engineId = process.env.VERTEX_AI_ENGINE_ID!;
+const projectId = assertEnv("GOOGLE_CLOUD_PROJECT");
+const location = assertEnv("VERTEX_AI_LOCATION");
+const engineId = assertEnv("VERTEX_AI_ENGINE_ID");
 const pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE || "10", 10);
 
 // Create client
