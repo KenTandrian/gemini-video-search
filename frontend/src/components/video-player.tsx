@@ -1,16 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Segment } from "@/types/search";
 import { useEffect, useRef, useState } from "react";
-
-type Segment = {
-  id: string;
-  title: string;
-  videoName: string;
-  timestamp: number;
-  uri: string;
-  snippet: string;
-};
 
 type VideoPlayerProps = {
   videoName: string;
@@ -34,14 +26,14 @@ export function VideoPlayer({ videoName, segments }: VideoPlayerProps) {
     fetchDuration();
   }, [videoName]);
 
-  const handleSegmentClick = (segment: Segment) => {
+  function handleSegmentClick(segment: Segment) {
     if (videoRef.current) {
       videoRef.current.src = segment.uri;
       videoRef.current.currentTime = 0; // Segments are clips, so start from 0
       videoRef.current.play();
       setCurrentSegment(segment);
     }
-  };
+  }
 
   // Use the URI of the first segment as the initial source for the player
   const initialVideoUri = segments[0]?.uri;
@@ -70,9 +62,7 @@ export function VideoPlayer({ videoName, segments }: VideoPlayerProps) {
                   style={{
                     left: `${(segment.timestamp / mainVideoDuration) * 100}%`,
                     width: `${
-                      (Math.min(15, mainVideoDuration - segment.timestamp) /
-                        mainVideoDuration) *
-                      100
+                      (parseFloat(segment.duration) / mainVideoDuration) * 100
                     }%`,
                   }}
                   title={`Segment at ${segment.timestamp}s`}
@@ -95,8 +85,36 @@ export function VideoPlayer({ videoName, segments }: VideoPlayerProps) {
                 }`}
                 onClick={() => handleSegmentClick(segment)}
               >
-                <p className="font-semibold">Timestamp: {segment.timestamp}s</p>
+                <p className="font-semibold">
+                  Timestamp: {segment.timestamp}s (Duration: {segment.duration})
+                </p>
                 <p>{segment.snippet}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {segment.persons.map((person) => (
+                    <span
+                      key={person}
+                      className="bg-blue-200 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                    >
+                      {person}
+                    </span>
+                  ))}
+                  {segment.organizations.map((org) => (
+                    <span
+                      key={org}
+                      className="bg-green-200 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                    >
+                      {org}
+                    </span>
+                  ))}
+                  {segment.hash_tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-gray-200 text-gray-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
         </div>

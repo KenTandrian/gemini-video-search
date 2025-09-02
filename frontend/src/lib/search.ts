@@ -1,5 +1,6 @@
 "use server";
 
+import { Segment } from "@/types/search";
 import { SearchServiceClient } from "@google-cloud/discoveryengine";
 
 // Get configuration from environment variables
@@ -14,22 +15,19 @@ const client = new SearchServiceClient({
 });
 
 function getPublicUrl(uri: string) {
-  console.log(uri);
-  if (!uri.startsWith("gs://")) {
-    return uri;
-  }
+  if (!uri.startsWith("gs://")) return uri;
   return uri.replace("gs://", "https://storage.googleapis.com/");
 }
 
-export async function search(searchQuery: string) {
+export async function search(query: string) {
   const startTime = Date.now();
-  if (!searchQuery) {
+  if (!query) {
     return {
+      duration: 0,
+      error: "Query parameter required",
       groupedResults: {},
       summary: null,
       total_results: 0,
-      duration: 0,
-      error: "Query parameter required",
     };
   }
 
@@ -38,9 +36,9 @@ export async function search(searchQuery: string) {
   try {
     const [sResults, , response] = await client.search(
       {
-        servingConfig,
-        query: searchQuery,
         pageSize,
+        query,
+        servingConfig,
         contentSearchSpec: {
           snippetSpec: {
             returnSnippet: true,
@@ -61,8 +59,14 @@ export async function search(searchQuery: string) {
         queryExpansionSpec: {
           condition: "AUTO",
         },
+        relevanceScoreSpec: {
+          returnRelevanceScore: true,
+        },
         spellCorrectionSpec: {
           mode: "AUTO",
+        },
+        userInfo: {
+          timeZone: "Asia/Jakarta",
         },
       },
       {
@@ -70,16 +74,12 @@ export async function search(searchQuery: string) {
       }
     );
 
-    const results =
+    const results: Segment[] =
       sResults.map((result) => {
         const structData = result.document?.structData?.fields;
-        const derivedData = result.document?.derivedStructData?.fields;
 
-        const title =
-          structData?.video_title?.stringValue ||
-          structData?.title?.stringValue ||
-          structData?.name?.stringValue ||
-          "Untitled Video";
+        const snippet =
+          structData?.title?.stringValue || "No video description";
 
         const uri =
           structData?.video_src?.stringValue ||
@@ -88,41 +88,37 @@ export async function search(searchQuery: string) {
           structData?.link?.stringValue ||
           "";
 
-        let snippet =
-          structData?.video_desc?.stringValue ||
-          structData?.document_description?.stringValue ||
-          structData?.description?.stringValue ||
-          structData?.snippet?.stringValue ||
-          structData?.document_transcript?.stringValue ||
-          "";
-
-        if (!snippet && derivedData?.snippets?.listValue?.values) {
-          for (const snippetItem of derivedData.snippets.listValue.values) {
-            const snippetText =
-              snippetItem.structValue?.fields?.snippet?.stringValue;
-            if (
-              snippetText &&
-              snippetText !== "No snippet is available for this page."
-            ) {
-              snippet = snippetText;
-              break;
-            }
-          }
-        }
-
-        const titleMatch = title.match(/Segment from (.*) at (\d+)s/);
+        const title = structData?.description?.stringValue || "Untitled Video";
+        const titleMatch = title.match(/Segment from (.*) at ([\d.]+)s/);
         const videoName = titleMatch ? titleMatch[1] : title;
         const timestamp = titleMatch ? parseInt(titleMatch[2], 10) : 0;
         const publicUri = getPublicUrl(uri);
+        const duration = structData?.duration?.stringValue || "0s";
+
+        const persons: Segment["persons"] =
+          structData?.persons?.listValue?.values?.map(
+            (p) => p.structValue?.fields?.name?.stringValue ?? ""
+          ) || [];
+        const organizations: Segment["organizations"] =
+          structData?.organizations?.listValue?.values?.map(
+            (o) => o.structValue?.fields?.name?.stringValue ?? ""
+          ) || [];
+        const hash_tags: Segment["hash_tags"] =
+          structData?.hash_tags?.listValue?.values?.map(
+            (t) => t.stringValue ?? ""
+          ) || [];
 
         return {
-          id: result.document?.id || "unknown",
+          duration,
+          hash_tags,
+          organizations,
+          persons,
+          snippet,
+          timestamp,
           title,
           videoName,
-          timestamp,
+          id: result.document?.id || "unknown",
           uri: publicUri,
-          snippet,
-          thumbnail: "", // Placeholder for now
         };
       }) || [];
 
@@ -134,7 +130,7 @@ export async function search(searchQuery: string) {
       }
       acc[key].push(result);
       return acc;
-    }, {} as Record<string, typeof results>);
+    }, {} as Record<string, Segment[]>);
 
     const duration = (Date.now() - startTime) / 1000;
 
