@@ -113,17 +113,6 @@ export default async function SearchPage({
             )
           )}
         </div>
-        <div className="space-y-4">
-          {Object.entries(searchResults.groupedResults).map(
-            ([videoName, segments]) => (
-              <VideoPlayer
-                key={videoName}
-                videoName={videoName}
-                segments={segments}
-              />
-            )
-          )}
-        </div>
       </div>
     </div>
   );
