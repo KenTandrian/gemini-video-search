@@ -8,10 +8,18 @@ const location = process.env.VERTEX_AI_LOCATION!;
 const engineId = process.env.VERTEX_AI_ENGINE_ID!;
 const pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE || "10", 10);
 
-// Create a client
+// Create client
 const client = new SearchServiceClient({
   apiEndpoint: `${location}-discoveryengine.googleapis.com`,
 });
+
+function getPublicUrl(uri: string) {
+  console.log(uri);
+  if (!uri.startsWith("gs://")) {
+    return uri;
+  }
+  return uri.replace("gs://", "https://storage.googleapis.com/");
+}
 
 export async function search(searchQuery: string) {
   const startTime = Date.now();
@@ -25,11 +33,10 @@ export async function search(searchQuery: string) {
     };
   }
 
-  // The full resource name of the search app serving config
   const servingConfig = `projects/${projectId}/locations/${location}/collections/default_collection/engines/${engineId}/servingConfigs/default_config`;
 
   try {
-    const [sResults, request, response] = await client.search(
+    const [sResults, , response] = await client.search(
       {
         servingConfig,
         query: searchQuery,
@@ -62,7 +69,6 @@ export async function search(searchQuery: string) {
         autoPaginate: false,
       }
     );
-    console.log("request.query", request?.query);
 
     const results =
       sResults.map((result) => {
@@ -107,13 +113,14 @@ export async function search(searchQuery: string) {
         const titleMatch = title.match(/Segment from (.*) at (\d+)s/);
         const videoName = titleMatch ? titleMatch[1] : title;
         const timestamp = titleMatch ? parseInt(titleMatch[2], 10) : 0;
+        const publicUri = getPublicUrl(uri);
 
         return {
           id: result.document?.id || "unknown",
           title,
           videoName,
           timestamp,
-          uri,
+          uri: publicUri,
           snippet,
           thumbnail: "", // Placeholder for now
         };
@@ -129,7 +136,7 @@ export async function search(searchQuery: string) {
       return acc;
     }, {} as Record<string, typeof results>);
 
-    const duration = (Date.now() - startTime) / 1000; // Duration in seconds
+    const duration = (Date.now() - startTime) / 1000;
 
     return {
       groupedResults,

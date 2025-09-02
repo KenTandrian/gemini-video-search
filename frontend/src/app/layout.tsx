@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import Link from "next/link";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,7 +20,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <header className="p-4 border-b">
-          <h1 className="text-xl font-semibold">Gemini Media Search</h1>
+          <Link className="text-xl font-semibold" href="/">
+            Gemini Media Search
+          </Link>
         </header>
         <main className="p-4">{children}</main>
       </body>

@@ -7,8 +7,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { VideoPlayer } from "@/components/video-player";
 import { search } from "@/lib/search";
-import type { Route } from "next";
 import Link from "next/link";
 
 export default async function SearchPage({
@@ -91,30 +91,11 @@ export default async function SearchPage({
       <div className="space-y-4">
         {Object.entries(searchResults.groupedResults).map(
           ([videoName, segments]) => (
-            <Card key={videoName} className="w-full">
-              <CardHeader>
-                <CardTitle>{videoName}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {segments
-                  .sort((a, b) => a.timestamp - b.timestamp)
-                  .map((segment) => (
-                    <div key={segment.id} className="border-t pt-2">
-                      <p className="font-semibold">
-                        Timestamp: {segment.timestamp}s
-                      </p>
-                      <p>{segment.snippet}</p>
-                      <Link
-                        href={segment.uri as Route}
-                        target="_blank"
-                        className="text-blue-500 hover:underline"
-                      >
-                        Watch segment
-                      </Link>
-                    </div>
-                  ))}
-              </CardContent>
-            </Card>
+            <VideoPlayer
+              key={videoName}
+              videoName={videoName}
+              segments={segments}
+            />
           )
         )}
       </div>
