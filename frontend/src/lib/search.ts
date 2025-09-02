@@ -1,6 +1,6 @@
 "use server";
 
-import { Segment } from "@/types/search";
+import type { Facet, Segment } from "@/types/search";
 import { SearchServiceClient } from "@google-cloud/discoveryengine";
 
 // Get configuration from environment variables
@@ -19,7 +19,10 @@ function getPublicUrl(uri: string) {
   return uri.replace("gs://", "https://storage.googleapis.com/");
 }
 
-export async function search(query: string) {
+export async function search(
+  query: string,
+  facetFilters: Record<string, string[]> = {}
+) {
   const startTime = Date.now();
   if (!query) {
     return {
@@ -28,6 +31,7 @@ export async function search(query: string) {
       groupedResults: {},
       summary: null,
       total_results: 0,
+      facets: [] as Facet[],
     };
   }
 
@@ -39,6 +43,16 @@ export async function search(query: string) {
         pageSize,
         query,
         servingConfig,
+        filter: Object.entries(facetFilters)
+          .map(([key, values]) =>
+            values.map((value) => `${key}: ANY("${value}")`).join(" AND ")
+          )
+          .join(" AND "),
+        facetSpecs: [
+          { facetKey: { key: "persons.name" }, limit: 20 },
+          { facetKey: { key: "organizations.name" }, limit: 20 },
+          { facetKey: { key: "hash_tags" }, limit: 50 },
+        ],
         contentSearchSpec: {
           snippetSpec: {
             returnSnippet: true,
@@ -139,6 +153,15 @@ export async function search(query: string) {
       summary: response?.summary?.summaryText || null,
       total_results: response?.totalSize || 0,
       duration: duration.toFixed(2),
+      facets:
+        response?.facets?.map((facet) => ({
+          key: facet.key ?? "",
+          values:
+            facet.values?.map((value) => ({
+              value: value.value ?? "",
+              count: Number(value.count) ?? 0,
+            })) || [],
+        })) || [],
     };
   } catch (error) {
     console.error(`Search error: ${error}`);
@@ -148,6 +171,7 @@ export async function search(query: string) {
       total_results: 0,
       duration: 0,
       error: (error as Error).message,
+      facets: [] as Facet[],
     };
   }
 }

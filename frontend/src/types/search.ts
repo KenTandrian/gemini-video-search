@@ -10,3 +10,11 @@ export type Segment = {
   uri: string;
   videoName: string;
 };
+
+export type Facet = {
+  key: string;
+  values: {
+    value: string;
+    count: number;
+  }[];
+};
