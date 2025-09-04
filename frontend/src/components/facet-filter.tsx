@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Collapsible,
@@ -47,8 +53,12 @@ export function FacetFilter({ facets }: FacetFilterProps) {
     <Card>
       <CardHeader>
         <CardTitle>Filters</CardTitle>
+        <CardDescription>
+          Refine your search by filtering by persons, organizations, and tags.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!facets?.length && <p>No filters.</p>}
         {facets.map((facet) => (
           <Collapsible key={facet.key} defaultOpen>
             <CollapsibleTrigger className="font-semibold w-full text-left flex justify-between items-center">
