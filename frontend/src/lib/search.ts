@@ -1,7 +1,7 @@
 "use server";
 
 import { assertEnv } from "@/lib/utils";
-import type { Facet, Segment } from "@/types/search";
+import type { SearchResult, Segment } from "@/types/search";
 import { SearchServiceClient } from "@google-cloud/discoveryengine";
 
 // Get configuration from environment variables
@@ -23,16 +23,16 @@ function getPublicUrl(uri: string) {
 export async function search(
   query: string,
   facetFilters: Record<string, string[]> = {}
-) {
+): Promise<SearchResult> {
   const startTime = Date.now();
   if (!query) {
     return {
-      duration: 0,
+      duration: "0.00",
       error: "Query parameter required",
       groupedResults: {},
       summary: null,
       total_results: 0,
-      facets: [] as Facet[],
+      facets: [],
     };
   }
 
@@ -123,6 +123,8 @@ export async function search(
             (t) => t.stringValue ?? ""
           ) || [];
 
+        const relevanceScore = result.modelScores?.relevance_score.values?.[0];
+
         return {
           duration,
           hash_tags,
@@ -133,6 +135,9 @@ export async function search(
           title,
           videoName,
           id: result.document?.id || "unknown",
+          metadata: {
+            relevanceScore,
+          },
           uri: publicUri,
         };
       }) || [];
@@ -170,9 +175,9 @@ export async function search(
       groupedResults: {},
       summary: null,
       total_results: 0,
-      duration: 0,
+      duration: "0.00",
       error: (error as Error).message,
-      facets: [] as Facet[],
+      facets: [],
     };
   }
 }

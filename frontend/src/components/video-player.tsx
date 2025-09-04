@@ -1,8 +1,16 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { Segment } from "@/types/search";
 import { useEffect, useRef, useState } from "react";
+
+function getRelevanceColor(score: number | undefined) {
+  if (score === undefined) return "bg-gray-400";
+  const r = Math.round(255 * (1 - score));
+  const g = Math.round(255 * score);
+  return `rgb(${r}, ${g}, 0)`;
+}
 
 type VideoPlayerProps = {
   videoName: string;
@@ -54,18 +62,24 @@ export function VideoPlayer({ videoName, segments }: VideoPlayerProps) {
             preload="metadata"
           />
           {mainVideoDuration > 0 && (
-            <div className="relative w-full h-3 bg-gray-200 rounded-sm mt-2 overflow-hidden">
+            <div className="relative w-full h-3 bg-gray-200 rounded-sm mt-2">
               {segments.map((segment) => (
                 <div
                   key={segment.id}
-                  className="absolute h-3 bg-blue-500 opacity-75 hover:opacity-100 rounded-sm cursor-pointer"
+                  className={cn("absolute h-3 rounded-sm cursor-pointer", {
+                    "ring-2 ring-offset-1 ring-blue-500":
+                      currentSegment?.id === segment.id,
+                  })}
                   style={{
+                    backgroundColor: getRelevanceColor(
+                      segment.metadata.relevanceScore
+                    ),
                     left: `${(segment.timestamp / mainVideoDuration) * 100}%`,
                     width: `${
                       (parseFloat(segment.duration) / mainVideoDuration) * 100
                     }%`,
                   }}
-                  title={`Segment at ${segment.timestamp}s`}
+                  title={`Segment at ${segment.timestamp}s (relevance: ${segment.metadata.relevanceScore})`}
                   onClick={() => handleSegmentClick(segment)}
                 />
               ))}
@@ -87,6 +101,7 @@ export function VideoPlayer({ videoName, segments }: VideoPlayerProps) {
               >
                 <p className="font-semibold">
                   Timestamp: {segment.timestamp}s (Duration: {segment.duration})
+                  (Relevance: {segment.metadata.relevanceScore?.toFixed(2)})
                 </p>
                 <p>{segment.snippet}</p>
                 <div className="flex flex-wrap gap-2 mt-2">
