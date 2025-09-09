@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 from google import genai
 from google.genai.types import Part, GenerateContentConfig
 
@@ -39,6 +40,7 @@ def generate_global_context(gcs_uri: str) -> dict:
     """
 
     try:
+        start = time.time()
         video_part = Part.from_uri(file_uri=gcs_uri, mime_type="video/mp4")
         response = client.models.generate_content(
             model=config.GEMINI_MODEL_NAME,
@@ -49,7 +51,8 @@ def generate_global_context(gcs_uri: str) -> dict:
         )
         cleaned_response = response.text.strip().replace("```json", "").replace("```", "") if response.text else ""
         context_data = json.loads(cleaned_response)
-        logger.info(f"Generated global context for {gcs_uri}: {context_data}")
+        dur = time.time() - start
+        logger.info(f"Generated global context for {gcs_uri}: {context_data} in {dur}s")
         return context_data
 
     except (Exception, json.JSONDecodeError) as e:
@@ -69,6 +72,7 @@ def generate_video_analysis(gcs_uri: str, global_context: dict) -> dict:
         or an empty dictionary if analysis fails.
     """
     logger.info(f"Analyzing video: {gcs_uri} with model {config.GEMINI_MODEL_NAME}...")
+    start = time.time()
 
     context_prompt = ""
     if global_context:
@@ -109,7 +113,8 @@ def generate_video_analysis(gcs_uri: str, global_context: dict) -> dict:
         cleaned_response = response.text.strip().replace("```json", "").replace("```", "") if response.text else ""
         analysis_data = json.loads(cleaned_response)
         
-        logger.info(f"Generated analysis for {gcs_uri}: {analysis_data}")
+        dur = time.time() - start
+        logger.info(f"Generated analysis for {gcs_uri}: {analysis_data} in {dur}s")
         return analysis_data
 
     except (Exception, json.JSONDecodeError) as e:
