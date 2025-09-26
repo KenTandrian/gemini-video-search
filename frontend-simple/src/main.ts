@@ -1,3 +1,5 @@
+import type { ApiResponse, Video } from "./types";
+
 document
   .getElementById("search-button")!
   .addEventListener("click", function () {
@@ -8,47 +10,40 @@ document
     }
   });
 
-// Perform an initial search to display results on load
-searchMedia("initial search");
+async function searchMedia(query: string) {
+  const resultsContainer = document.getElementById("results-container")!;
+  resultsContainer.innerHTML = `
+    <div class="d-flex justify-content-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  `;
 
-interface Timestamp {
-  start: number;
-  end: number;
+  try {
+    const response = await fetch("/api/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: ApiResponse = await response.json();
+    displayResults(data.entries);
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+    resultsContainer.innerHTML = `<div class="alert alert-danger" role="alert">
+      Failed to fetch search results. Please try again later.
+    </div>`;
+  }
 }
 
-interface MediaResult {
-  videoUrl: string;
-  timestamps: Timestamp[];
-}
-
-function searchMedia(query: string) {
-  console.log(`Searching for: ${query}`);
-  // Mock API response
-  const mockApiResponse: MediaResult[] = [
-    {
-      videoUrl:
-        "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      timestamps: [
-        { start: 10, end: 15 },
-        { start: 25, end: 30 },
-        { start: 60, end: 65 },
-      ],
-    },
-    {
-      videoUrl:
-        "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-      timestamps: [
-        { start: 30, end: 35 },
-        { start: 60, end: 65 },
-        { start: 90, end: 95 },
-      ],
-    },
-  ];
-
-  displayResults(mockApiResponse);
-}
-
-function displayResults(results: MediaResult[]) {
+function displayResults(results: Video[]) {
   const resultsContainer = document.getElementById("results-container")!;
   resultsContainer.innerHTML = "";
 
@@ -61,39 +56,36 @@ function displayResults(results: MediaResult[]) {
     const videoResultDiv = document.createElement("div");
     videoResultDiv.className = "card mb-3";
 
-    const cardBody = document.createElement("div");
-    cardBody.className = "card-body";
-
     const videoPreview = document.createElement("video");
     videoPreview.className = "card-img-top";
-    videoPreview.src = result.videoUrl;
+    const videoFileName = result.video_file.replace(/_/g, " ");
+    const gcsBucketUrl = import.meta.env.VITE_GCS_BUCKET_URL;
+
+    const timestampParts = result.timestamp.split(":");
+    const seconds =
+      parseInt(timestampParts[0], 10) * 60 + parseInt(timestampParts[1], 10);
+    videoPreview.src = `${gcsBucketUrl}/${encodeURIComponent(
+      videoFileName
+    )}#t=${seconds}`;
     videoPreview.controls = true;
     videoPreview.preload = "metadata";
     videoResultDiv.appendChild(videoPreview);
 
-    const videoTitle = document.createElement("h5");
-    videoTitle.className = "card-title";
-    videoTitle.textContent = result.videoUrl;
-    cardBody.appendChild(videoTitle);
+    const cardBody = document.createElement("div");
+    cardBody.className = "card-body";
 
-    const timestampsList = document.createElement("ul");
-    timestampsList.className = "list-group list-group-flush";
+    const description = document.createElement("p");
+    description.className = "card-text";
+    description.textContent = result.description;
+    cardBody.appendChild(description);
 
-    result.timestamps.forEach((timestamp) => {
-      const timestampItem = document.createElement("li");
-      timestampItem.className = "list-group-item";
+    const timestampLink = document.createElement("a");
+    timestampLink.className = "card-link";
+    timestampLink.href = `${videoPreview.src}#t=${seconds}`;
+    timestampLink.textContent = `Go to timestamp: ${result.timestamp}`;
+    timestampLink.target = "_blank";
 
-      const timestampLink = document.createElement("a");
-      timestampLink.className = "card-link";
-      timestampLink.href = `${result.videoUrl}#t=${timestamp.start}`;
-      timestampLink.textContent = `Timestamp: ${timestamp.start}s - ${timestamp.end}s`;
-      timestampLink.target = "_blank"; // Open in new tab
-
-      timestampItem.appendChild(timestampLink);
-      timestampsList.appendChild(timestampItem);
-    });
-
-    cardBody.appendChild(timestampsList);
+    cardBody.appendChild(timestampLink);
     videoResultDiv.appendChild(cardBody);
     resultsContainer.appendChild(videoResultDiv);
   });
