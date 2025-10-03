@@ -54,7 +54,8 @@ def run_pipeline(gcs_video_uri: str):
 
             schema_compliant_data = {
                 # --- Required fields ---
-                "title": f'{analysis_data.get("description")} {" ".join(analysis_data.get("hash_tags", []))}',
+                # Truncate title to 1000 chars to comply with Vertex AI Search's document.title limit.
+                "title": f'{analysis_data.get("description")} {" ".join(analysis_data.get("hash_tags", []))}'[:1000],
                 "categories": ["Sports", "Soccer", "Video Highlight"],
                 "uri": seg_uri,
                 "available_time": datetime.now(timezone.utc).isoformat(),
