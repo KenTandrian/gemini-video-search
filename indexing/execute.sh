@@ -18,7 +18,7 @@ export JOB_NAME="${JOB_NAME:-media-indexing-job}"
 # --- Video URIs ---
 # Add your video URIs to this list
 VIDEO_URIS=(
-  # "gs://vertex-gemini-video-search/videos/Cinta Sedalam Rindu Episode 1 dan 2 - Gara Gara Bantuan Aluna, Galaxy Malah Dapat Sial.mp4"
+  # "gs://vertex-gemini-video-search/videos/Cinta Sedalam Rindu Episode 1 dan 2 - Gara Gara Bantuan Aluna Galaxy Malah Dapat Sial.mp4"
   # "gs://vertex-gemini-video-search/videos/Cinta Sedalam Rindu Episode 3 - Cinta Segitiga! Aluna & Felicia Sama-Sama Naksir Ezra.mp4"
   # "gs://vertex-gemini-video-search/videos/Cinta Sedalam Rindu Episode 3 - Salting Abis!! Galaxy Puji Aluna Cantik.mp4"
   # "gs://vertex-gemini-video-search/videos/Cinta Sedalam Rindu Episode 4 dan 5 - BAPER!!! Galaxy Tenangkan Aluna Yang Bersedih.mp4"
