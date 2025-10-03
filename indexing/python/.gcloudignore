@@ -1,0 +1,21 @@
+# This file tells gcloud what to ignore when deploying.
+
+# Python specific
+
+**pycache**/
+_.pyc
+_.pyo
+\*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE / Editor specific
+
+.vscode/
+.idea/
+
+# Dotfiles
+
+.DS_Store
