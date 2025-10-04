@@ -144,7 +144,7 @@ def generate_video_analysis(gcs_uri: str, global_context: dict, video_type: str)
         Analyze this soap opera video clip with high detail. Respond in a single structured JSON object.
         The JSON object should contain the following fields:
         - "description": A complete and detailed description in English that includes all dialogue, actions, and events from the scene, capturing the emotional tone of the interactions.
-        - "persons": A list of JSON objects for each character, with a "name" and a "role". The role should be "character".
+        - "persons": A list of JSON objects for each character, with a "name" and a "role". The value of "role" must always be "character".
         - "organizations": Leave this field as an empty list.
         - "hash_tags": A list of relevant hashtags in PascalCase that describe the scene's themes or key events (e.g., "#Betrayal", "#FamilyDrama", "#SecretRevealed"). Do not include character names.
 
