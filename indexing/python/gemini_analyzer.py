@@ -115,7 +115,7 @@ def generate_video_analysis(gcs_uri: str, global_context: dict, video_type: str)
     if video_type == "sports":
         prompt = f"""
         <INSTRUCTIONS>
-        Analyze this sports video clip with high detail. Respond in a single structured JSON format.
+        Analyze this sports video clip with high detail. Respond in a single structured JSON object.
         The JSON object should contain the following fields:
         - "description": A complete, single-paragraph description in English focusing on the key actions.
         - "persons": A list of JSON objects, each with a "name" and a "role". The role must be one of the following supported values: "director", "actor", "player", "team", "league", "editor", "author", "character", "contributor", "creator", "editor", "funder", "producer", "provider", "publisher", "sponsor", "translator", "music-by", "channel". For athletes, use the "player" role.
@@ -125,6 +125,15 @@ def generate_video_analysis(gcs_uri: str, global_context: dict, video_type: str)
         Focus only on the events in the video.
         </INSTRUCTIONS>
 
+        <OUTPUT_FORMAT>
+        {{
+            "description": "...",
+            "persons": [{{ "name": "...", "role": "..." }}],
+            "organizations": [{{ "name": "...", "role": "..." }}],
+            "hash_tags": ["..."]
+        }}
+        </OUTPUT_FORMAT>
+
         <CONTEXT>
         {context_prompt}
         </CONTEXT>
@@ -132,7 +141,7 @@ def generate_video_analysis(gcs_uri: str, global_context: dict, video_type: str)
     elif video_type == "soap_opera":
         prompt = f"""
         <INSTRUCTIONS>
-        Analyze this soap opera video clip with high detail. Respond in a single structured JSON format.
+        Analyze this soap opera video clip with high detail. Respond in a single structured JSON object.
         The JSON object should contain the following fields:
         - "description": A complete and detailed description in English that includes all dialogue, actions, and events from the scene, capturing the emotional tone of the interactions.
         - "persons": A list of JSON objects for each character, with a "name" and a "role". The role should be "character".
@@ -141,6 +150,15 @@ def generate_video_analysis(gcs_uri: str, global_context: dict, video_type: str)
 
         Focus only on the events in the video.
         </INSTRUCTIONS>
+
+        <OUTPUT_FORMAT>
+        {{
+            "description": "...",
+            "persons": [{{ "name": "...", "role": "character" }}],
+            "organizations": [],
+            "hash_tags": ["..."]
+        }}
+        </OUTPUT_FORMAT>
 
         <CONTEXT>
         {context_prompt}
@@ -162,6 +180,11 @@ def generate_video_analysis(gcs_uri: str, global_context: dict, video_type: str)
         # Clean the response and load as JSON
         cleaned_response = response.text.strip().replace("```json", "").replace("```", "") if response.text else ""
         analysis_data = json.loads(cleaned_response)
+
+        # The model sometimes returns a list of objects, so we take the first one
+        if isinstance(analysis_data, list):
+            if analysis_data:
+                analysis_data = analysis_data[0]
         
         dur = time.time() - start
         logger.info(f"Generated analysis for {gcs_uri}: {analysis_data} in {dur}s")
