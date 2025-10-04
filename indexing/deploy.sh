@@ -32,7 +32,7 @@ gcloud services enable \
 
 # --- Build and Push Container Image ---
 echo "Building and pushing the container image to Artifact Registry..."
-(cd indexing && gcloud builds submit --region="$REGION" --tag "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:latest" .)
+(cd python && gcloud builds submit --region="$REGION" --tag "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:latest" .)
 
 # --- Create Service Account ---
 echo "Creating service account..."
@@ -63,4 +63,4 @@ gcloud run jobs update "$JOB_NAME" \
   --task-timeout=3600 # 1 hour timeout, adjust as needed
 
 echo "--- Deployment Complete ---"
-echo "To run the job, use the 'run-on-cloud.sh' script."
+echo "To run the job, use the 'execute.sh' script."
