@@ -45,11 +45,10 @@ This workflow is triggered by a user's search query.
 
 | Category         | Technology / Service                                                                  |
 | ---------------- | ------------------------------------------------------------------------------------- |
-| **Google Cloud** | Vertex AI (Gemini 2.5 Pro, Embedding API), Vertex AI Search, Cloud Storage, Cloud Run |
-| **Backend**      | Python, FastAPI                                                                       |
-| **Indexing**     | Python, Google Cloud Python SDK, FFmpeg (for video segmentation)                      |
-| **Frontend**     | JavaScript, React (or any modern JS framework), Axios                                 |
 | **DevOps**       | Docker, Google Cloud CLI (`gcloud`)                                                   |
+| **Frontend**     | JavaScript, Next.js (React)                                                           |
+| **Google Cloud** | Vertex AI (Gemini 2.5 Pro, Embedding API), Vertex AI Search, Cloud Storage, Cloud Run |
+| **Indexing**     | Python, Google Cloud Python SDK, FFmpeg (for video segmentation)                      |
 
 ---
 
@@ -107,35 +106,22 @@ This step processes a video and adds it to your search index.
     ```
     This may take some time depending on the length of the video.
 
-### 4. Run the Backend API
+### 4. Run the Frontend Application
 
-1.  **Navigate to the backend directory:**
-    ```bash
-    cd ../backend/
-    ```
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Start the local server:**
-    ```bash
-    uvicorn app.main:app --reload
-    ```
-    The API will be running at `http://localhost:8000`.
-
-### 5. Run the Frontend
+The primary user interface is the Next.js application in the `frontend/` directory. It includes its own server-side logic to communicate with Google Cloud APIs and does not require a separate backend process.
 
 1.  **Navigate to the frontend directory:**
     ```bash
-    cd ../frontend/
+    cd frontend/
     ```
 2.  **Install dependencies:**
     ```bash
     npm install
     ```
-3.  **Start the development server:**
+3.  **Configure Environment:** Copy `frontend/.env.template` to `frontend/.env` and fill in your Google Cloud project details.
+4.  **Start the development server:**
     ```bash
-    npm start
+    npm run dev
     ```
     The web interface will be accessible at `http://localhost:3000`.
 
@@ -143,15 +129,15 @@ This step processes a video and adds it to your search index.
 
 ```
 .
-├── backend/          # FastAPI server for handling search queries
-├── indexing/         # Scripts for the offline video processing pipeline
-├── frontend/         # React/JS app for the user interface
-├── .env              # Local environment variables (ignored by git)
-├── .env.example      # Template for environment variables
-└── README.md         # This file
+├── frontend/             # Main Next.js full-stack application
+├── indexing/             # Scripts for the video processing pipeline
+├── yt-to-gcs-uploader/   # Utility to upload YouTube videos to GCS
+├── frontend-flask/       # (Extras) Alternative implementation using Flask
+├── frontend-simple/      # (Extras) Simple Vite frontend for related project
+└── README.md             # This file
 ```
 
 ## Deployment
 
-- **Backend:** The `backend/` directory includes a `Dockerfile` for easy containerization. It is designed to be deployed as a serverless container on **Google Cloud Run**.
-- **Frontend:** The static frontend application can be built and deployed to any static hosting service, such as **Firebase Hosting** or **Google Cloud Storage**.
+- **Frontend:** The Next.js application in `frontend/` can be deployed to **Cloud Run** or any Node.js hosting environment.
+- **Indexing Pipeline:** The indexing scripts are designed to be run in a serverless environment like Cloud Run Jobs or manually as needed.
