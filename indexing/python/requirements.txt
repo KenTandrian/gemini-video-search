@@ -1,8 +1,7 @@
 # Google Cloud Libraries
-google-cloud-aiplatform==1.111.0
-google-cloud-discoveryengine==0.13.11
-google-cloud-storage
-google-genai==1.32.0
+google-cloud-discoveryengine==0.13.12
+google-cloud-storage==3.4.0
+google-genai==1.41.0
 
 # Video processing
 ffmpeg-python==0.2.0
